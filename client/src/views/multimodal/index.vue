@@ -4,7 +4,7 @@
       <h2>多模态数据管理</h2>
       <el-button type="primary" @click="handleAdd">添加数据</el-button>
     </div>
-    <el-table :data="tableData" style="width: 100%" v-loading="loading">
+    <el-table :data="paginatedData" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="数据名称" width="120" />
       <el-table-column prop="type" label="数据类型" width="120">
@@ -22,6 +22,18 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[5, 10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="50%">
       <el-form :model="form" label-width="120px">
@@ -66,29 +78,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import multimodalService from '@/service/multimodalService'
 
 const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('添加数据')
 
-const tableData = ref([
-  {
-    id: 1,
-    name: '景区图片集',
-    type: 'image',
-    description: '包含各个景点的高清图片',
-    createTime: '2024-01-15 10:00:00'
-  },
-  {
-    id: 2,
-    name: '景区介绍视频',
-    type: 'video',
-    description: '景区宣传片和导览视频',
-    createTime: '2024-01-15 11:30:00'
-  }
-])
+// 分页相关变量
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+// 数据列表
+const tableData = ref<any[]>([])
+
+// 计算当前页的数据
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return tableData.value.slice(start, end)
+})
+
+// 初始化数据
+onMounted(() => {
+  fetchData()
+})
 
 const form = reactive({
   name: '',
@@ -138,8 +154,17 @@ const handleDelete = (row: any) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-    .then(() => {
-      ElMessage.success('删除成功')
+    .then(async () => {
+      loading.value = true
+      try {
+        await multimodalService.delete(row.id)
+        ElMessage.success('删除成功')
+        fetchData() // 刷新数据
+      } catch (error) {
+        console.error('删除失败', error)
+      } finally {
+        loading.value = false
+      }
     })
     .catch(() => {
       // 取消删除
@@ -150,14 +175,66 @@ const handleFileChange = (file: any) => {
   form.file = file
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!form.name || !form.type) {
     ElMessage.warning('请填写必要信息')
     return
   }
-  // TODO: 实现数据提交逻辑
-  ElMessage.success(dialogTitle.value === '添加数据' ? '添加成功' : '更新成功')
-  dialogVisible.value = false
+
+  loading.value = true
+  try {
+    if (dialogTitle.value === '添加数据') {
+      await multimodalService.create(form)
+      ElMessage.success('添加成功')
+    } else {
+      await multimodalService.update(form.id, form)
+      ElMessage.success('更新成功')
+    }
+    dialogVisible.value = false
+    fetchData() // 刷新数据
+  } catch (error) {
+    console.error('提交数据失败', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理页码大小变化
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  fetchData()
+}
+
+// 处理当前页变化
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
+  fetchData()
+}
+
+// 获取数据函数
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
+    const res = await multimodalService.getList(params)
+    console.log(res)
+    // 修改这里，正确处理服务器返回的数据结构
+    if (res.success) {
+      tableData.value = res.data.items
+      total.value = res.data.total
+    } else {
+      ElMessage.error(res.message || '获取数据失败')
+    }
+  } catch (error) {
+    console.error('获取数据失败', error)
+    ElMessage.error('获取数据失败')
+    total.value = tableData.value.length
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -177,5 +254,11 @@ const handleSubmit = () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
