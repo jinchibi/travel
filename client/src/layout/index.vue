@@ -39,18 +39,6 @@
               <el-icon><ChatDotRound /></el-icon>
               <span>智能推荐</span>
             </el-menu-item>
-            <el-menu-item index="/home/analysis">
-              <el-icon><TrendCharts /></el-icon>
-              <span>数据分析</span>
-            </el-menu-item>
-            <el-menu-item index="/home/visualization">
-              <el-icon><PieChart /></el-icon>
-              <span>可视化</span>
-            </el-menu-item>
-            <el-menu-item index="/home/orders">
-              <el-icon><Tickets /></el-icon>
-              <span>订单管理</span>
-            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main class="main">

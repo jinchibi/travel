@@ -39,21 +39,6 @@ const router = createRouter({
           name: 'recommendation',
           component: () => import('@/views/recommendation/index.vue'),
         },
-        {
-          path: '/home/analysis',
-          name: 'analysis',
-          component: () => import('@/views/analysis/index.vue'),
-        },
-        {
-          path: '/home/visualization',
-          name: 'visualization',
-          component: () => import('@/views/visualization/index.vue'),
-        },
-        {
-          path: '/home/orders',
-          name: 'orders',
-          component: () => import('@/views/orders/index.vue'),
-        },
       ],
     },
     {
