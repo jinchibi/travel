@@ -10,22 +10,12 @@
       <el-table-column prop="name" label="景点名称" width="150">
         <template #default="{ row }">
           <div class="name-cell">
-            <el-image
-              :src="row.coverImage"
-              :preview-src-list="[row.coverImage]"
-              class="cover-image"
-            />
             <span>{{ row.name }}</span>
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="category" label="类别" width="120">
-        <template #default="{ row }">
-          <el-tag>{{ row.category }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="address" label="地址" />
-      <el-table-column prop="rating" label="评分" width="100">
+      <el-table-column prop="address" label="地址" width="200" />
+      <el-table-column prop="rating" label="评分" width="150">
         <template #default="{ row }">
           <el-rate v-model="row.rating" disabled text-color="#ff9900" />
         </template>
@@ -35,11 +25,10 @@
           <span>¥{{ row.price }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="简介" prop="introduction" width="250" />
       <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="success" @click="handleImages(row)">图片管理</el-button>
-          <el-button link type="warning" @click="handleReviews(row)">评价管理</el-button>
           <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -50,34 +39,14 @@
         <el-form-item label="景点名称" prop="name">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="类别" prop="category">
-          <el-select v-model="form.category" placeholder="请选择类别">
-            <el-option label="自然景观" value="nature" />
-            <el-option label="人文景观" value="culture" />
-            <el-option label="主题公园" value="theme" />
-            <el-option label="历史遗迹" value="history" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="地址" prop="address">
           <el-input v-model="form.address" />
         </el-form-item>
         <el-form-item label="门票价格" prop="price">
           <el-input-number v-model="form.price" :min="0" :precision="2" />
         </el-form-item>
-        <el-form-item label="景点介绍" prop="description">
-          <el-input v-model="form.description" type="textarea" rows="4" />
-        </el-form-item>
-        <el-form-item label="封面图片">
-          <el-upload
-            class="cover-upload"
-            action="#"
-            :auto-upload="false"
-            :show-file-list="false"
-            :on-change="handleCoverChange"
-          >
-            <img v-if="form.coverImage" :src="form.coverImage" class="uploaded-image" />
-            <el-icon v-else class="upload-icon"><Plus /></el-icon>
-          </el-upload>
+        <el-form-item>
+          <el-input v-model="form.introduction" label="简介" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -88,45 +57,12 @@
       </template>
     </el-dialog>
 
-    <!-- 图片管理对话框 -->
-    <el-dialog v-model="imagesDialogVisible" title="图片管理" width="70%">
-      <div class="images-container">
-        <el-upload
-          action="#"
-          list-type="picture-card"
-          :auto-upload="false"
-          :on-change="handleImageAdd"
-        >
-          <el-icon><Plus /></el-icon>
-        </el-upload>
-      </div>
-    </el-dialog>
-
-    <!-- 评价管理对话框 -->
-    <el-dialog v-model="reviewsDialogVisible" title="评价管理" width="60%">
-      <el-table :data="reviewsData" style="width: 100%">
-        <el-table-column prop="user" label="用户" width="120" />
-        <el-table-column prop="rating" label="评分" width="120">
-          <template #default="{ row }">
-            <el-rate v-model="row.rating" disabled />
-          </template>
-        </el-table-column>
-        <el-table-column prop="content" label="评价内容" />
-        <el-table-column prop="time" label="评价时间" width="180" />
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="danger" @click="handleReviewDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const loading = ref(false)
@@ -144,28 +80,18 @@ const tableData = ref([
     address: '示例地址',
     rating: 4.5,
     price: 88,
-    coverImage: 'https://example.com/image.jpg',
     description: '这是一个示例景点描述'
   }
 ])
 
-const reviewsData = ref([
-  {
-    id: 1,
-    user: '游客1',
-    rating: 5,
-    content: '景色非常优美',
-    time: '2024-01-15 14:30:00'
-  }
-])
 
 const form = reactive({
   name: '',
-  category: '',
+  sales: 0,
+  rating: 5,
   address: '',
   price: 0,
-  description: '',
-  coverImage: ''
+  introduction: '',
 })
 
 const rules = reactive<FormRules>({
@@ -196,36 +122,6 @@ const handleEdit = (row: any) => {
 
 const handleDelete = (row: any) => {
   ElMessageBox.confirm('确定要删除该景点吗？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-    .then(() => {
-      ElMessage.success('删除成功')
-    })
-    .catch(() => {})
-}
-
-const handleImages = (row: any) => {
-  imagesDialogVisible.value = true
-}
-
-const handleReviews = (row: any) => {
-  reviewsDialogVisible.value = true
-}
-
-const handleCoverChange = (file: any) => {
-  // TODO: 实现图片上传逻辑
-  form.coverImage = URL.createObjectURL(file.raw)
-}
-
-const handleImageAdd = (file: any) => {
-  // TODO: 实现图片上传逻辑
-  ElMessage.success('图片上传成功')
-}
-
-const handleReviewDelete = (row: any) => {
-  ElMessageBox.confirm('确定要删除该评价吗？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
