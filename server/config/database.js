@@ -2,7 +2,7 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 // MySQL连接池配置
-const mysqlPool = mysql.createPool({
+const pool = mysql.createPool({
     host: process.env.MYSQL_HOST || 'localhost',
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || '',
@@ -12,20 +12,31 @@ const mysqlPool = mysql.createPool({
     queueLimit: 0
 });
 
-// 测试MySQL连接
-const testMySQLConnection = async () => {
-    try {
-        const connection = await mysqlPool.getConnection();
-        console.log('MySQL连接成功');
-        connection.release();
-    } catch (error) {
-        console.error('MySQL连接失败:', error);
-        // 如果连接失败，5秒后重试
-        setTimeout(testMySQLConnection, 5000);
-    }
-};
+// 获取数据库连接
+const connect = () => {
+    return new Promise((resolve, reject) => {
+        pool.getConnection((err, connection) => {
+            // 从连接池获取连接
+            !err ? resolve(connection) : reject(err)
+        })
+    })
+}
+
+// 封装sql
+const query = (sql, params) => {
+    return new Promise(async (resolve, reject) => {
+        let connection = await connect();
+        connection.query(sql, params, (err, results, fields) => {
+            !err ? resolve(results) : reject(err)
+            // 释放连接
+            connection.release()
+        })
+    })
+}
+
 
 module.exports = {
-    mysqlPool,
-    testMySQLConnection
+    pool,
+    connect,
+    query
 };

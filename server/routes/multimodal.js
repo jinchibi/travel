@@ -1,109 +1,108 @@
-const express = require('express');
+const express = require("express");
+const { pool } = require("../config/database");
 const router = express.Router();
+const sharp = require("sharp");
+const fs = require("fs");
 
 // 上传多模态数据
-router.post('/upload', async (req, res) => {
-    try {
-        // TODO: 实现多模态数据上传逻辑
-        res.json({
-            success: true,
-            message: '数据上传成功',
-            data: {
-                id: 'temp-id',
-                type: req.body.type,
-                url: 'temp-url'
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: '数据上传失败',
-            error: error.message
-        });
-    }
+router.post("/upload", async (req, res) => {
+  try {
+    // 实现多模态数据上传逻辑
+    const { name, type, description, file, userId } = req.body;
+    // 在multimodal_data表中添加数据
+    const [result] = await pool.execute(
+      "INSERT INTO multimodal_data (data_name, data_type, data_description, data_file, user_id) VALUES (?, ?, ?, ?, ?)",
+      [name, type, description, file, userId]
+    );
+
+    res.json({
+      success: true,
+      message: "数据上传成功",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "数据上传失败",
+      error: error.message,
+    });
+  }
 });
 
 // 获取多模态数据列表
-router.get('/list', async (req, res) => {
-    console.log('获取数据')
-    try {
-        // 获取分页参数
-        const page = parseInt(req.query.page) || 1;
-        const pageSize = parseInt(req.query.pageSize) || 10;
+router.get("/list", async (req, res) => {
+  try {
+    // 获取分页参数
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const userId = req.query.userId;
 
-        const tableData = [
-            {
-              id: 1,
-              name: '景区图片集',
-              type: 'image',
-              description: '包含各个景点的高清图片',
-              createTime: '2024-01-15 10:00:00'
-            },
-            {
-              id: 2,
-              name: '景区介绍视频',
-              type: 'video',
-              description: '景区宣传片和导览视频',
-              createTime: '2024-01-15 11:30:00'
-            },
-            {
-              id: 3,
-              name: '景区音频导览',
-              type: 'audio',
-              description: '景区语音讲解和背景音乐',
-              createTime: '2024-01-16 09:15:00'
-            },
-            {
-              id: 4,
-              name: '景区文字介绍',
-              type: 'text',
-              description: '景区历史和文化背景介绍',
-              createTime: '2024-01-16 14:20:00'
-            },
-            {
-              id: 5,
-              name: '自然风光图集',
-              type: 'image',
-              description: '自然风景高清图片集',
-              createTime: '2024-01-17 11:00:00'
-            }
-          ]
-        res.json({
-            success: true,
-            message: '获取数据列表成功',
-            data: {
-                total: tableData.length,
-                page,
-                pageSize,
-                items: tableData
-            }
-        });
-        console.log('获取数据成功')
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: '获取数据列表失败',
-            error: error.message
-        });
-        console.log('获取数据失败')
-    }
+    // 查询分页数据
+    const [rows] = await pool.execute(
+      "SELECT * FROM multimodal_data WHERE user_id =?;",
+      [userId]
+    );
+
+    const tableData = rows.map((row) => {
+      const data = {
+        id: row.data_id,
+        name: row.data_name,
+        type: row.data_type,
+        description: row.data_description,
+        file: `/image/${row.data_id}`, // 图片的访问 URL
+      };
+      return data;
+    });
+
+    res.json({
+      success: true,
+      code: 200,
+      message: "获取数据列表成功",
+      data: {
+        total: tableData.length,
+        page,
+        pageSize,
+        mutilmodal: tableData,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "获取数据列表失败",
+      error: error.message,
+    });
+  }
 });
 
 // 删除多模态数据
-router.delete('/:id', async (req, res) => {
-    try {
-        // TODO: 实现数据删除逻辑
-        res.json({
-            success: true,
-            message: '数据删除成功'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: '数据删除失败',
-            error: error.message
-        });
+router.delete("/:id", async (req, res) => {
+  try {
+    // 实现数据删除逻辑
+    const id = req.params.id;
+
+    // 从数据库中删除指定ID的记录
+    const [result] = await pool.execute(
+      "DELETE FROM multimodal_data WHERE data_id = ?",
+      [id]
+    );
+
+    // 检查是否成功删除
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "未找到要删除的数据",
+      });
     }
+    res.json({
+      success: true,
+      message: "数据删除成功",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "数据删除失败",
+      error: error.message,
+    });
+  }
 });
 
 module.exports = router;

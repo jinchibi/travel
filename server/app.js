@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const { testMySQLConnection } = require('./config/database');
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -14,8 +13,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// 初始化数据库连接
-testMySQLConnection();
 
 // 路由配置
 app.use('/api/visualization', require('./routes/visualization'));

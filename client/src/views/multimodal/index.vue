@@ -4,7 +4,7 @@
       <h2>多模态数据管理</h2>
       <el-button type="primary" @click="handleAdd">添加数据</el-button>
     </div>
-    <el-table :data="paginatedData" style="width: 100%" v-loading="loading">
+    <el-table :data="tableData" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="数据名称" width="120" />
       <el-table-column prop="type" label="数据类型" width="120">
@@ -13,7 +13,6 @@
         </template>
       </el-table-column>
       <el-table-column prop="description" label="描述" />
-      <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
@@ -44,8 +43,6 @@
           <el-select v-model="form.type" placeholder="请选择数据类型">
             <el-option label="图片" value="image" />
             <el-option label="视频" value="video" />
-            <el-option label="音频" value="audio" />
-            <el-option label="文本" value="text" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述">
@@ -61,7 +58,7 @@
             <el-button type="primary">选择文件</el-button>
             <template #tip>
               <div class="el-upload__tip">
-                支持图片、视频、音频和文本文件
+                支持图片、视频
               </div>
             </template>
           </el-upload>
@@ -74,13 +71,43 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 预览对话框 -->
+    <el-dialog v-model="previewDialogVisible" title="预览" width="60%" center>
+      <div class="preview-container">
+        <el-image
+          v-if="previewType === 'image'"
+          :src="previewUrl"
+          fit="contain"
+          class="preview-media"
+        />
+        <video
+          v-else-if="previewType === 'video'"
+          :src="previewUrl"
+          class="preview-media"
+          controls
+        ></video>
+        <div v-else class="preview-error">
+          不支持的文件类型
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import multimodalService from '@/service/multimodalService'
+import { useUserStore } from '@/stores/user';
+
+interface ISubmit {
+  name: string;
+  type: 'video' | 'image';
+  description: string;
+  file: any;
+  userId: number;
+}
 
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -94,23 +121,21 @@ const total = ref(0)
 // 数据列表
 const tableData = ref<any[]>([])
 
-// 计算当前页的数据
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return tableData.value.slice(start, end)
-})
+// 用户信息
+const userStore = useUserStore()
+const userId = userStore.getUserId() as number
 
 // 初始化数据
 onMounted(() => {
   fetchData()
 })
 
-const form = reactive({
+const form = reactive<ISubmit>({
   name: '',
-  type: '',
+  type: 'image',
   description: '',
-  file: null
+  file: null,
+  userId
 })
 
 const getTagType = (type: string) => {
@@ -144,8 +169,18 @@ const handleEdit = (row: any) => {
   })
 }
 
-const handlePreview = (row: any) => {
-  ElMessage.info('预览功能开发中')
+const previewDialogVisible = ref(false)
+const previewUrl = ref('')
+const previewType = ref('')
+
+const handlePreview = async (row: any) => {
+  if (!row.file) {
+    ElMessage.warning('暂无预览文件')
+    return
+  }
+  previewType.value = row.type
+  previewUrl.value = row.file
+  previewDialogVisible.value = true
 }
 
 const handleDelete = (row: any) => {
@@ -155,13 +190,14 @@ const handleDelete = (row: any) => {
     type: 'warning'
   })
     .then(async () => {
-      loading.value = true
       try {
+        loading.value = true
         await multimodalService.delete(row.id)
         ElMessage.success('删除成功')
         fetchData() // 刷新数据
       } catch (error) {
         console.error('删除失败', error)
+        ElMessage.error('删除失败')
       } finally {
         loading.value = false
       }
@@ -180,14 +216,13 @@ const handleSubmit = async () => {
     ElMessage.warning('请填写必要信息')
     return
   }
-
   loading.value = true
   try {
     if (dialogTitle.value === '添加数据') {
       await multimodalService.create(form)
       ElMessage.success('添加成功')
     } else {
-      await multimodalService.update(form.id, form)
+      // await multimodalService.update(form)
       ElMessage.success('更新成功')
     }
     dialogVisible.value = false
@@ -217,13 +252,13 @@ const fetchData = async () => {
   try {
     const params = {
       page: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
+      userId
     }
     const res = await multimodalService.getList(params)
     console.log(res)
-    // 修改这里，正确处理服务器返回的数据结构
-    if (res.success) {
-      tableData.value = res.data.items
+    if (res.code === 200) {
+      tableData.value = res.data.mutilmodal
       total.value = res.data.total
     } else {
       ElMessage.error(res.message || '获取数据失败')
@@ -260,5 +295,23 @@ const fetchData = async () => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.preview-media {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.preview-error {
+  color: #f56c6c;
+  font-size: 16px;
 }
 </style>

@@ -20,7 +20,7 @@ export interface QueryParams {
 
 // 定义分页返回数据接口
 export interface PageResult<T> {
-  items: T[]
+  mutilmodal: T[]
   total: number
 }
 
@@ -40,6 +40,15 @@ class MultimodalService {
   }
 
   /**
+   * 获取图片
+   * @param params 查询参数
+   */
+  getImage(url: string) {
+    const timestamp = new Date().getTime()
+    return http.get(url, { _t: timestamp })
+  }
+
+  /**
    * 获取单个多模态数据详情
    * @param id 数据ID
    * @returns 数据详情
@@ -54,13 +63,7 @@ class MultimodalService {
    * @returns 创建结果
    */
   create(data: Partial<MultimodalData>) {
-    // 如果包含文件，使用上传方法
-    if (data.file) {
-      const { file, ...rest } = data
-      return http.upload<MultimodalData>(this.baseUrl, file, 'file', rest)
-    }
-    // 否则使用普通POST请求
-    return http.post<MultimodalData>(this.baseUrl, data)
+    return http.post<MultimodalData>(`${this.baseUrl}/upload`, data)
   }
 
   /**
