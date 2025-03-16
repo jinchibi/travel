@@ -7,8 +7,8 @@ export interface QueryParams {
 }
 
 export interface PageResult<T> {
-  list: T[]
   total: number
+  tableData: T[]
 }
 
 export interface AttractionsData {

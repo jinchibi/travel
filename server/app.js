@@ -20,6 +20,7 @@ app.use('/api/multimodal', require('./routes/multimodal'));
 app.use('/api/recommendation', require('./routes/recommendation'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/attractions', require('./routes/attractions'));
 
 
 // 启动服务器

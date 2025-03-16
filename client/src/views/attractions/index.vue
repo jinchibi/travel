@@ -34,6 +34,19 @@
       </el-table-column>
     </el-table>
 
+    <div class="pagination-container">
+      <el-pagination
+        background
+        layout="prev, pager, next, total, sizes"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :page-sizes="[5, 10, 15, 20]"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
+      />
+    </div>
+
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="50%">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="景点名称" prop="name">
@@ -61,14 +74,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, ElPagination } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import attractionsService from '@/service/attractionsService'
 
 const loading = ref(false)
 const dialogVisible = ref(false)
-const imagesDialogVisible = ref(false)
-const reviewsDialogVisible = ref(false)
 const dialogTitle = ref('添加景点')
 const formRef = ref<FormInstance>()
 
@@ -84,6 +96,21 @@ const tableData = ref([
   }
 ])
 
+// 分页
+const currentPage = ref(1)
+const pageSize = ref(5)
+const total = ref(0)
+
+// 页码大小变化
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  fetchData()
+}
+// 当前页变化
+const handlePageChange = (val: number) => {
+  currentPage.value = val
+  fetchData()
+}
 
 const form = reactive({
   name: '',
@@ -144,6 +171,34 @@ const handleSubmit = async () => {
     }
   })
 }
+
+onMounted(() => {
+  fetchData()
+})
+
+// 获取数据函数
+const fetchData = async () => {
+  loading.value = true
+  const params = {
+    page: currentPage.value,
+    pageSize: pageSize.value
+  }
+  console.log(params)
+  try {
+    const res = await attractionsService.getList(params)
+    if (res.code === 200) {
+      console.log(res.data)
+      tableData.value = res.data.tableData as any[]
+      total.value = res.data.total
+    } else {
+      ElMessage.error(res.message || '获取数据失败')
+    }
+  } catch (error) {
+    console.log(error)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -164,47 +219,15 @@ const handleSubmit = async () => {
   gap: 10px;
 }
 
-.cover-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  object-fit: cover;
-}
-
-.cover-upload {
-  width: 148px;
-  height: 148px;
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.uploaded-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.upload-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 148px;
-  height: 148px;
-  line-height: 148px;
-  text-align: center;
-}
 
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
-
-.images-container {
+.pagination-container {
+  margin-top: 20px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
 }
 </style>
