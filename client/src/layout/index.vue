@@ -15,6 +15,14 @@
             @select="handleSelect"
             router
           >
+            <el-menu-item index="/home/pic2video">
+              <el-icon><VideoCamera /></el-icon>
+              <span>景画活现</span>
+            </el-menu-item>
+            <el-menu-item index="/home/erase">
+              <el-icon><PictureRounded /></el-icon>
+              <span>智能擦除</span>
+            </el-menu-item>
             <el-menu-item index="/home/multimodal">
               <el-icon><Files /></el-icon>
               <span>多模态数据管理</span>
@@ -47,14 +55,12 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  DataBoard,
   Files,
   Location,
   Notebook,
   ChatDotRound,
-  TrendCharts,
-  PieChart,
-  Tickets,
+  VideoCamera,
+  PictureRounded
 } from '@element-plus/icons-vue'
 
 const title = '多模态景点服务平台'

@@ -10,6 +10,16 @@ const router = createRouter({
       redirect: '/home/board',
       children: [
         {
+          path: '/home/pic2video',
+          name: 'pic2video',
+          component: () => import('@/views/pic2video/index.vue'),
+        },
+        {
+          path: '/home/erase',
+          name: 'erase',
+          component: () => import('@/views/erase/index.vue'),
+        },
+        {
           path: '/home/multimodal',
           name: 'multimodal',
           component: () => import('@/views/multimodal/index.vue'),

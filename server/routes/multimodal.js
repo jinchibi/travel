@@ -1,8 +1,6 @@
 const express = require("express");
 const { pool } = require("../config/database");
 const router = express.Router();
-const sharp = require("sharp");
-const fs = require("fs");
 
 // 上传多模态数据
 router.post("/upload", async (req, res) => {
