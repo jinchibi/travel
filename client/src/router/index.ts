@@ -10,19 +10,9 @@ const router = createRouter({
       redirect: '/home/board',
       children: [
         {
-          path: '/home/board',
-          name: 'board',
-          component: () => import('@/views/board/index.vue'),
-        },
-        {
           path: '/home/multimodal',
           name: 'multimodal',
           component: () => import('@/views/multimodal/index.vue'),
-        },
-        {
-          path: '/home/classification',
-          name: 'classification',
-          component: () => import('@/views/multimodal/classification.vue'),
         },
         {
           path: '/home/attractions',

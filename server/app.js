@@ -15,7 +15,6 @@ app.use(morgan('dev'));
 
 
 // 路由配置
-app.use('/api/visualization', require('./routes/visualization'));
 app.use('/api/multimodal', require('./routes/multimodal'));
 app.use('/api/recommendation', require('./routes/recommendation'));
 app.use('/api/notes', require('./routes/notes'));

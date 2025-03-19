@@ -16,7 +16,7 @@ router.get('/list', async (req, res) => {
             name: row.name,
             sales: row.sales,
             price: row.price,
-            rating: row.rating,
+            rating: parseInt(row.rating) === 0 ? 5.0 : row.rating,
             address: row.address,
             introduction: row.introduction
         }))

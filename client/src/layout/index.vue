@@ -15,17 +15,9 @@
             @select="handleSelect"
             router
           >
-            <el-menu-item index="/home/board">
-              <el-icon><DataBoard /></el-icon>
-              <span>控制台</span>
-            </el-menu-item>
             <el-menu-item index="/home/multimodal">
               <el-icon><Files /></el-icon>
               <span>多模态数据管理</span>
-            </el-menu-item>
-            <el-menu-item index="/home/classification">
-              <el-icon><Files /></el-icon>
-              <span>数据标注</span>
             </el-menu-item>
             <el-menu-item index="/home/attractions">
               <el-icon><Location /></el-icon>
