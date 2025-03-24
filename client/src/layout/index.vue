@@ -12,6 +12,7 @@
           <el-menu
             :default-active="activeMenu"
             class="el-menu-vertical"
+            active-text-color="#5961BC"
             @select="handleSelect"
             router
           >
